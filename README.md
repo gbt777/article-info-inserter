@@ -1,8 +1,8 @@
-# Article Info Inserter
+# Article Info Inserter（文章信息追加器）
 
-**Article Info Inserter** automatically counts the characters, images, and estimated reading time of the current Markdown note, then inserts the stats at the top of the note and optionally writes them to the Frontmatter. Built for writers and WeChat-public-account editors who want to grasp length and image scale before drafting.
+**Article Info Inserter** (中文名：文章信息追加器) automatically counts the characters, images, and estimated reading time of the current Markdown note, then inserts the stats at the top of the note and optionally writes them to the Frontmatter. Built for writers and WeChat-public-account editors who want to grasp length and image scale before drafting.
 
-自动统计 Markdown 笔记的**字数、图片数量和阅读用时**，并把统计结果插入到文章开头正文，同时可选写入 Frontmatter 属性。适合写作者、公众号排版者在动笔前快速掌握篇幅与配图规模。
+**文章信息追加器（Article Info Inserter）** 自动统计 Markdown 笔记的**字数、图片数量和阅读用时**，并把统计结果插入到文章开头正文，同时可选写入 Frontmatter 属性。适合写作者、公众号排版者在动笔前快速掌握篇幅与配图规模。
 
 ## Features
 
@@ -47,6 +47,10 @@
 - Requires Obsidian `1.0.0` or later.
 
 ## Changelog
+
+### 1.0.2
+- Added the official Chinese name **文章信息追加器** (English name `Article Info Inserter` unchanged).
+- Release assets now ship with GitHub artifact attestations (build provenance) so users can cryptographically verify `main.js` originates from this repo.
 
 ### 1.0.1
 - Fixed the settings preview not refreshing when editing prefix/unit fields — the effect preview now updates live.

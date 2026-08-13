@@ -1,0 +1,68 @@
+name: Release
+
+# Triggers:
+#  - Push of a semver tag (e.g. 1.0.2) — used by the local publish flow.
+#  - Manual dispatch with a `tag` input — fallback if the tag-push event
+#    does not auto-trigger (some proxied/private setups).
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release, e.g. 1.0.2 (must already exist)'
+        required: true
+
+# Attestation requires OIDC (id-token) + the ability to write attestations
+# and release assets back to the repo.
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve ref
+        id: ref
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "ref=refs/tags/${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+          fetch-depth: 1
+
+      # Create (or reuse) the GitHub Release and upload the required assets.
+      # Obsidian only accepts exactly manifest.json + main.js.
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            main.js
+            manifest.json
+          generate_release_notes: false
+          body: |
+            Article Info Inserter（文章信息追加器）release.
+            Release assets are backed by GitHub artifact attestations (build provenance).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Cryptographic provenance for the compiled plugin binary.
+      - name: Attest main.js
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'main.js'
+
+      # Also attest the manifest so the whole release is verifiable.
+      - name: Attest manifest.json
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'manifest.json'

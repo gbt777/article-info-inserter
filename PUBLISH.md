@@ -22,14 +22,28 @@ Obsidian plugins are submitted through the web directory at <https://community.o
 
 Version updates are automatic after the first listing — Obsidian pulls from your GitHub Release, no resubmission needed.
 
-1. Place the new `main.js`, bump `manifest.json` `"version"` (e.g. `1.0.1`).
-2. Add a line to `versions.json`, e.g. `"1.0.1": "1.0.0"`.
-3. Commit and create a new Release (tag must equal `manifest.json` version):
-   ```bash
-   git add -A && git commit -m "Release 1.0.1" && git push
-   gh release create 1.0.1 --title "1.0.1" --notes "..." manifest.json main.js
-   ```
-4. Users get the update via **Settings → Community plugins → Check for updates**.
+The Release and its artifact attestations are produced by the CI workflow
+`.github/workflows/release.yml` (triggered by a tag push), **not** by a manual
+`gh release create`. The workflow builds nothing (this plugin ships `main.js`
+directly) but it creates the Release with `main.js` + `manifest.json` and attaches
+GitHub artifact attestations (build provenance) so users can verify origin.
+
+1. Update `main.js` if needed, bump `manifest.json` `"version"` (e.g. `1.0.2`).
+2. Add a line to `versions.json`, e.g. `"1.0.2": "1.0.0"`.
+3. Commit the changes to `main` (the Git Data API is used in this environment
+   because `github.com:443` git protocol is blocked). The commit must include
+   `.github/workflows/release.yml` so the workflow exists at the tagged commit.
+4. Create a lightweight tag equal to `manifest.json` version (e.g. `1.0.2`). The
+   tag push triggers the Release workflow automatically.
+   - If the tag push does not auto-trigger, run the workflow manually:
+     `gh workflow run release.yml -f tag=1.0.2 -R gbt777/article-info-inserter`
+5. Verify on GitHub: Release `1.0.2` exists with assets `main.js` + `manifest.json`,
+   and each asset has an associated attestation (Release page → "Attestations").
+6. Users get the update via **Settings → Community plugins → Check for updates**.
+
+> The previous manual review recommendation ("Missing GitHub artifact
+> attestations for release assets") is resolved by this workflow. No manual
+> `gh release create` should be used, or it would produce an unattested release.
 
 ## Pre-submit checklist
 
