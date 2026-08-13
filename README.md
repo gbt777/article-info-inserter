@@ -1,6 +1,6 @@
-# Extra Info Inserter
+# Article Info Inserter
 
-**Extra Info Inserter** automatically counts the characters, images, and estimated reading time of the current Markdown note, then inserts the stats at the top of the note and optionally writes them to the Frontmatter. Built for writers and WeChat-public-account editors who want to grasp length and image scale before drafting.
+**Article Info Inserter** automatically counts the characters, images, and estimated reading time of the current Markdown note, then inserts the stats at the top of the note and optionally writes them to the Frontmatter. Built for writers and WeChat-public-account editors who want to grasp length and image scale before drafting.
 
 自动统计 Markdown 笔记的**字数、图片数量和阅读用时**，并把统计结果插入到文章开头正文，同时可选写入 Frontmatter 属性。适合写作者、公众号排版者在动笔前快速掌握篇幅与配图规模。
 
@@ -16,11 +16,11 @@
 ## Installation
 
 1. In Obsidian, open **Settings → Community plugins** and turn off Safe mode.
-2. Browse, search for `Extra Info Inserter` (or `extra-info-inserter`), then install and enable.
+2. Browse, search for `Article Info Inserter` (or `article-info-inserter`), then install and enable.
 
 ### Beta via BRAT
 1. Install and enable the BRAT plugin.
-2. BRAT settings → Add Beta plugin → paste `gbt777/extra-info-inserter`.
+2. BRAT settings → Add Beta plugin → paste `gbt777/article-info-inserter`.
 3. Enable the plugin.
 
 ## Usage

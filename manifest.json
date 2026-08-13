@@ -1,6 +1,6 @@
 {
-  "id": "extra-info-inserter",
-  "name": "Extra Info Inserter",
+  "id": "article-info-inserter",
+  "name": "Article Info Inserter",
   "version": "1.0.1",
   "minAppVersion": "1.0.0",
   "description": "自动统计笔记的字数、图片数量和阅读用时，支持自定义文案和 Frontmatter 字段策略.",

@@ -1,6 +1,6 @@
 # Release guide: from publish to update
 
-> Release workflow for the Extra Info Inserter plugin (`gbt777/extra-info-inserter`).
+> Release workflow for the Article Info Inserter plugin (`gbt777/article-info-inserter`).
 
 ## Submit to the community directory
 
@@ -8,15 +8,15 @@ Obsidian plugins are submitted through the web directory at <https://community.o
 
 ### Prerequisites
 1. An Obsidian account (free, <https://obsidian.md>).
-2. GitHub account `gbt777` signed in; repo `gbt777/extra-info-inserter` is Public.
+2. GitHub account `gbt777` signed in; repo `gbt777/article-info-inserter` is Public.
 3. Default branch `main` HEAD contains the latest `manifest.json`; a Release exists with `manifest.json` + `main.js` as assets.
 
 ### Steps
 1. Open <https://community.obsidian.md> and sign in with your Obsidian account.
 2. Link your GitHub account in your profile.
 3. Choose **Add your plugin**.
-4. Confirm the repo `gbt777/extra-info-inserter`; the directory reads `manifest.json` from `main` HEAD and auto-fills id / name / author / description.
-5. After submission: automated bot validation + official manual review. Validation passes → `Ready for review` label; after manual merge the plugin is searchable in the community market.
+4. Confirm the repo `gbt777/article-info-inserter`; the directory reads `manifest.json` from `main` HEAD and auto-fills id / name / author / description.
+5. After submission: automated bot validation runs immediately (typically within minutes). On pass, the plugin becomes searchable in the community market within ~24h. Use **Request review** only when you believe a scan result is a false positive.
 
 ## Publish a new version
 
