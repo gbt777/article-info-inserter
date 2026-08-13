@@ -15,11 +15,11 @@ const DEFAULT_SETTINGS = {
     fmImageCount: "write",
 
     wordPrefix: "全文共: ",
-    wordUnit: "字",
+    wordUnit: " 字",
     readingPrefix: "阅读用时约 ",
-    readingUnit: "分钟",
+    readingUnit: " 分钟",
     imagePrefix: "图片共: ",
-    imageUnit: "张",
+    imageUnit: " 张",
     separator: "，"
 };
 
@@ -290,11 +290,11 @@ class AutoStatsSettingTab extends PluginSettingTab {
         containerEl.createEl("h3", { text: "④ 效果预览" });
 
         containerEl.createEl("div", { cls: "setting-item-description", text: "属性区（Frontmatter）：" });
-        var yamlBox = containerEl.createEl("pre");
+        var yamlBox = containerEl.createEl("pre", { cls: "auto-stats-preview-yaml" });
         yamlBox.style.cssText = "background:var(--background-secondary);padding:8px 12px;border-radius:4px;margin:4px 0 12px;white-space:pre-wrap;font-family:monospace;";
 
         containerEl.createEl("div", { cls: "setting-item-description", text: "正文标记行（Body Marker）：" });
-        var bodyBox = containerEl.createEl("pre");
+        var bodyBox = containerEl.createEl("pre", { cls: "auto-stats-preview-body" });
         bodyBox.style.cssText = "background:var(--background-secondary);padding:8px 12px;border-radius:4px;margin:4px 0 12px;white-space:pre-wrap;word-break:break-all;";
 
         self.refreshPreview(yamlBox, bodyBox);

@@ -1,32 +1,59 @@
 # Extra Info Inserter
 
-自动统计当前 Markdown 笔记的字数、图片数量与预计阅读用时，并把统计结果插入文章开头的正文；同时可将结果写入 Frontmatter 属性区，便于检索与展示。
+**Extra Info Inserter** automatically counts the characters, images, and estimated reading time of the current Markdown note, then inserts the stats at the top of the note and optionally writes them to the Frontmatter. Built for writers and WeChat-public-account editors who want to grasp length and image scale before drafting.
 
-Extra Info Inserter automatically counts the words, images, and estimated reading time of the active Markdown note, inserts the stats at the top of the note, and can also write them into the Frontmatter properties.
+自动统计 Markdown 笔记的**字数、图片数量和阅读用时**，并把统计结果插入到文章开头正文，同时可选写入 Frontmatter 属性。适合写作者、公众号排版者在动笔前快速掌握篇幅与配图规模。
 
 ## Features
 
-- 统计字数、图片数量、阅读用时 / Counts words, images, and reading time
-- 自定义插入文案与格式 / Customizable label and format
-- 支持写入 Frontmatter 字段 / Writes Frontmatter properties
-- 一键刷新当前笔记统计 / One-click refresh
+- **Word count**: counts Chinese by character and English/numbers by word, automatically stripping images, code blocks, inline code, HTML, links, and wikilinks.
+- **Image count**: recognizes both `![[x.png]]` wikilink images and standard `![](url)` Markdown images, including WeChat `wx_fmt` image links.
+- **Reading time**: estimated from a configurable words-per-minute rate (default 300).
+- **Body marker**: inserts a line like `*[全文共: 1234字，图片共: 3张]*` at the top of the note (prefix, units, and separators are customizable).
+- **Frontmatter strategy**: `char_count` / `reading_time` / `image_count` can each be set to write / delete / clear.
+- **Manual trigger**: click the ribbon icon or run the command "更新字数与图片统计". It never rewrites on file open, so it is safe and predictable.
 
 ## Installation
 
-1. Open **Settings → Community plugins** in Obsidian.
-2. Turn off **Restricted mode** if it is on.
-3. Click **Browse** and search for "Extra Info Inserter".
-4. Click **Install**, then **Enable**.
+1. In Obsidian, open **Settings → Community plugins** and turn off Safe mode.
+2. Browse, search for `Extra Info Inserter` (or `extra-info-inserter`), then install and enable.
 
-Alternatively, download `main.js` and `manifest.json` from the latest GitHub release and place them in `.obsidian/plugins/extra-info-inserter/`.
+### Beta via BRAT
+1. Install and enable the BRAT plugin.
+2. BRAT settings → Add Beta plugin → paste `gbt777/extra-info-inserter`.
+3. Enable the plugin.
 
 ## Usage
 
 1. Open any Markdown note.
-2. Run the command **Extra Info Inserter: Insert stats** (or click the ribbon icon).
-3. The plugin inserts a stats block at the top of the note and updates the Frontmatter properties.
-4. Run the command again to refresh the stats.
+2. Click the ribbon icon, or run the command **更新字数与图片统计** (Update word & image stats).
+3. The plugin inserts a stats line at the top of the note and updates the Frontmatter per your settings.
+
+> Each run first removes the previously inserted stats line before rewriting, so it never stacks duplicates.
+
+## Settings
+
+| Group | Option | Description |
+|---|---|---|
+| Body display | Show word count / Show image count / Show reading time | Controls which metrics appear in the body marker line |
+| Body display | Words per minute | Used to compute reading time; always adjustable |
+| Frontmatter | Enable Frontmatter writing | Master switch |
+| Frontmatter | char_count / reading_time / image_count | Each set to write / delete / clear |
+| Text | Prefix / unit / separator | Customize output text |
+
+## Compatibility
+
+- Relies on Obsidian core APIs; **mobile-compatible** (`isDesktopOnly: false`).
+- Requires Obsidian `1.0.0` or later.
+
+## Changelog
+
+### 1.0.1
+- Fixed the settings preview not refreshing when editing prefix/unit fields — the effect preview now updates live.
+
+### 1.0.0
+- Initial release: word / image / reading-time stats, body marker + Frontmatter strategy.
 
 ## License
 
-MIT
+[MIT](./LICENSE) © 2026 gbt777
