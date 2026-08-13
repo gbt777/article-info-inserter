@@ -3,7 +3,7 @@
   "name": "Extra Info Inserter",
   "version": "1.0.0",
   "minAppVersion": "1.0.0",
-  "description": "自动统计 Markdown 笔记的字数、图片数量和阅读用时，并将结果插入文章开头正文，同时可写入 Frontmatter 属性区。",
+  "description": "自动统计 Markdown 笔记的字数、图片数量和阅读用时，并将结果插入文章开头正文，同时可写入 Frontmatter 属性区.",
   "author": "gbt777",
   "authorUrl": "https://github.com/gbt777",
   "isDesktopOnly": false
