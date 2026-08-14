@@ -193,7 +193,7 @@ const DEFAULT_SETTINGS = {
     imageUnit: " 张",
     modifiedPrefix: "本文完成于：",
     authorText: "作者：XXX",
-    separator: "，",
+    separator: "丨",
 
     wordPosition: "start",
     readingPosition: "start",
@@ -556,7 +556,7 @@ class AutoStatsSettingTab extends PluginSettingTab {
         addInput(L("inputImagePrefix"), "imagePrefix", "图片共: ");
         addInput(L("inputImageUnit"), "imageUnit", "张");
         addInput(L("inputModifiedPrefix"), "modifiedPrefix", "本文完成于：");
-        addInput(L("inputSeparator"), "separator", "，");
+        addInput(L("inputSeparator"), "separator", "丨");
 
         // ④ 位置设置
         containerEl.createEl("h3", { text: L("sectionPosition") });

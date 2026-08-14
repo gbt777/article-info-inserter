@@ -87,6 +87,10 @@
 
 ## Changelog / 更新日志
 
+### 1.1.1
+- Changed the default separator between stats to the vertical bar `丨` (was `，`).
+  统计项之间的默认分隔符改为竖线 `丨`（原为 `，`）。
+
 ### 1.1.0
 - Added **completion time** (body + Frontmatter `modified_time`) and a customizable **author / custom text** line.
   新增**完成时间**（正文 + 属性区 `modified_time`）与可自定义的**作者/自定义文本**行。

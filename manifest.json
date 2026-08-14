@@ -1,7 +1,7 @@
 {
   "id": "article-info-inserter",
   "name": "Article Info Inserter",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "minAppVersion": "1.0.0",
   "description": "文章信息追加器（Article Info Inserter）：一键在正文与属性区插入字数、图片数、阅读用时、完成时间与作者信息，支持自定义文案、位置与字段策略.",
   "author": "gbt777",
