@@ -28,16 +28,15 @@ The Release and its artifact attestations are produced by the CI workflow
 directly) but it creates the Release with `main.js` + `manifest.json` and attaches
 GitHub artifact attestations (build provenance) so users can verify origin.
 
-1. Update `main.js` if needed, bump `manifest.json` `"version"` (e.g. `1.0.2`).
-2. Add a line to `versions.json`, e.g. `"1.0.2": "1.0.0"`.
-3. Commit the changes to `main` (the Git Data API is used in this environment
-   because `github.com:443` git protocol is blocked). The commit must include
+1. Update `main.js` if needed, bump `manifest.json` `"version"` (e.g. `1.1.0`).
+2. Add a line to `versions.json`, e.g. `"1.1.0": "1.0.0"`.
+3. Commit the changes to `main`. The commit must include
    `.github/workflows/release.yml` so the workflow exists at the tagged commit.
-4. Create a lightweight tag equal to `manifest.json` version (e.g. `1.0.2`). The
+4. Create a lightweight tag equal to `manifest.json` version (e.g. `1.1.0`). The
    tag push triggers the Release workflow automatically.
    - If the tag push does not auto-trigger, run the workflow manually:
-     `gh workflow run release.yml -f tag=1.0.2 -R gbt777/article-info-inserter`
-5. Verify on GitHub: Release `1.0.2` exists with assets `main.js` + `manifest.json`,
+     `gh workflow run release.yml -f tag=1.1.0 -R gbt777/article-info-inserter`
+5. Verify on GitHub: Release `1.1.0` exists with assets `main.js` + `manifest.json`,
    and each asset has an associated attestation (Release page → "Attestations").
 6. Users get the update via **Settings → Community plugins → Check for updates**.
 
