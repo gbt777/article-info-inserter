@@ -87,9 +87,9 @@ A：执行"更新文章信息"前，手动删除 `<div data-aii="marker">…</di
 
 ## 九、运行截图
 
-| 设置面板（中文） | 设置面板（英文） | 正文信息行效果 |
-|---|---|---|
-| ![settings-zh](images/screenshot-1.png) | ![settings-en](images/screenshot-2.png) | ![body-marker](images/screenshot-3.png) |
+| 设置面板（中文） | 设置面板（英文） | 正文信息行效果 | Word 导出效果 |
+|---|---|---|---|
+| ![settings-zh](images/settings-zh.png) | ![settings-en](images/settings-en.png) | ![body-marker](images/body-marker.png) | ![word-export](images/word-export.png) |
 
 ## 十、许可证
 

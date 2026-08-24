@@ -87,9 +87,9 @@ A: Before "Update article info", manually delete the `<div data-aii="marker">…
 
 ## 8. Screenshots
 
-| Settings (Chinese) | Settings (English) | Body info lines |
-|---|---|---|
-| ![settings-zh](images/screenshot-1.png) | ![settings-en](images/screenshot-2.png) | ![body-marker](images/screenshot-3.png) |
+| Settings (Chinese) | Settings (English) | Body info lines | Word export |
+|---|---|---|---|
+| ![settings-zh](images/settings-zh.png) | ![settings-en](images/settings-en.png) | ![body-marker](images/body-marker.png) | ![word-export](images/word-export.png) |
 
 ## 9. License
 
