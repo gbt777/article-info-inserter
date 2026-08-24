@@ -4,6 +4,8 @@
 
 **简要描述（Brief）：** 在 Obsidian 笔记正文自动追加"文章信息行"——字数、阅读时间、图片数、创建/修改时间、自定义链接与图片等，支持 Frontmatter 属性组合与灵活排版。
 
+**English summary:** Article Info Inserter is an Obsidian community plugin that automatically appends configurable article-info lines (word count, reading time, images, timestamps, custom links/images, etc.) to your Markdown notes. It supports Frontmatter properties, flexible alignment, and one-click refresh while replacing only its own `data-aii="marker"` block to avoid polluting your content.
+
 ---
 
 ## 一、功能简介
@@ -78,6 +80,9 @@ Article Info Inserter（文章信息追加器）是一款 Obsidian 社区插件�
 
 **Q：为什么只支持桌面端？**
 A：插件使用 Node `crypto`（图片 MD5 去重）与 `fs`（文件操作），移动端 Obsidian 受限环境无法运行，故标记 `isDesktopOnly: true`。
+
+**Q：插件为什么要直接访问文件系统（Node `fs`）？**
+A：`fs` 仅用于插件功能必需的文件操作：① 将用户配置的本地/网络图片复制到当前笔记所在 vault 的附件目录；② 计算图片内容 MD5 用于去重；③ 读取/写入本插件自身的数据文件（如 `data.json`）。不会访问或修改 vault 外的用户文件。
 
 **Q：信息行会破坏我的正文吗？**
 A：不会。插件以独立 HTML 块标记写入，更新时只替换该区块，正文原样保留。
