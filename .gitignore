@@ -1,0 +1,10 @@
+# 用户配置文件（含真实配置与网络图 URL，绝不提交）
+data.json
+
+# 本地备份文件
+*.bak
+*.bak-*
+
+# 操作系统/编辑器
+.DS_Store
+Thumbs.db
