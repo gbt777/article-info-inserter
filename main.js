@@ -617,7 +617,15 @@ function exportSettingsForPreset(s) {
 function isImageUrl(url) {
     if (!url) return false;
     const ext = "png|jpg|jpeg|gif|bmp|svg|webp|heic|jxl|avif";
-    return new RegExp("\\.(" + ext + ")([?#]|$)", "i").test(url) || /wx_fmt=/i.test(url);
+    const u = String(url);
+    // 常见图片扩展名
+    if (new RegExp("\\.(" + ext + ")([?#]|$)", "i").test(u)) return true;
+    // 微信公众号/腾讯系图片参数
+    if (/wx_fmt=/i.test(u)) return true;
+    if (/[?&]tp=(webp|jpg|jpeg|png|gif|bmp|svg)/i.test(u)) return true;
+    // 微信图片 CDN 域名特征
+    if (/mmbiz\.(qpic|weixin)\.cn\//i.test(u)) return true;
+    return false;
 }
 
 // 基础模式（原生 Markdown）下对 URL 做最小化整理：
@@ -947,9 +955,30 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
             if (!merged.display[key]) merged.display[key] = Object.assign({}, defaults[key]);
         }
 
-        // 补齐每行缩进字段
-        for (const row of merged.rowConfigs) {
-            if (row && row.indent == null) row.indent = 0;
+        // 规范化 rowConfigs：保证 6 行 × 5 槽位齐全、槽位字段完整。
+        // 历史数据/手工编辑可能导致行数或槽位数缺失，缺失会让设置页在渲染时抛异常而整体空白，
+        // 用户将再也无法进入设置界面自行修复，因此必须在加载阶段兜底补全。
+        const SLOT_FIELDS = { tag: "none", bodyShow: "hide", propPolicy: "none" };
+        if (!Array.isArray(merged.rowConfigs)) merged.rowConfigs = [];
+        for (let i = 0; i < 6; i++) {
+            const row = merged.rowConfigs[i];
+            if (!row || typeof row !== "object") {
+                merged.rowConfigs[i] = { slots: [], alignment: "justify", indent: 0 };
+            }
+            if (merged.rowConfigs[i].indent == null) merged.rowConfigs[i].indent = 0;
+            if (!merged.rowConfigs[i].alignment) merged.rowConfigs[i].alignment = "justify";
+            if (!Array.isArray(merged.rowConfigs[i].slots)) merged.rowConfigs[i].slots = [];
+            const slots = merged.rowConfigs[i].slots;
+            for (let j = 0; j < 5; j++) {
+                const slot = slots[j];
+                if (!slot || typeof slot !== "object") {
+                    slots[j] = Object.assign({}, SLOT_FIELDS);
+                } else {
+                    if (slot.tag == null) slot.tag = SLOT_FIELDS.tag;
+                    if (slot.bodyShow == null) slot.bodyShow = SLOT_FIELDS.bodyShow;
+                    if (slot.propPolicy == null) slot.propPolicy = SLOT_FIELDS.propPolicy;
+                }
+            }
         }
 
         // 兼容旧版无 presets 字段
@@ -1275,16 +1304,14 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
         // 各类计数（在原始文本上操作，互不影响）
         const wikiImages = text.match(wikiImgRe) || [];
         const mdImagesRaw = text.match(mdImgRe) || [];
-        const extRe = new RegExp("\\.(" + ext + ")([?#]|$)", "i");
-        const wxRe = /wx_fmt=/i;
         function isNetworkPath(p) { return /^https?:\/\//i.test(p); }
-        // 剥掉 Markdown 图片 URL 的尖括号包裹（![...](<url>)），否则 extRe 会因末尾多出的 ">" 误判为非图片
+        // 剥掉 Markdown 图片 URL 的尖括号包裹（![...](<url>)），否则扩展名判断会因末尾多出的 ">" 误判
         const stripAngle = (u) => { const mm = u.match(/^<(.+)>$/); return mm ? mm[1] : (u || ""); };
 
         let localImageCount = 0, networkImageCount = 0;
         const mdImages = mdImagesRaw.filter(m => {
             const url = stripAngle((m.match(/\(([^)]+)\)/) || ["", ""])[1] || "");
-            const isImg = extRe.test(url) || wxRe.test(url);
+            const isImg = isImageUrl(url);
             if (isImg) {
                 if (isNetworkPath(url)) networkImageCount++;
                 else localImageCount++;
@@ -1321,15 +1348,19 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
         }
 
         // 嵌入数：Obsidian 内部嵌入 ![[...]] 中除图片以外的内容（图片计入 image_count）
+        // 防御：两个正则边界不完全一致时（如 ![[a.png|300]] 的别名写法）避免出现负数
         const allWikiEmbeds = text.match(wikiEmbedRe) || [];
-        const embedCount = allWikiEmbeds.length - wikiImages.length;
+        const embedCount = Math.max(0, allWikiEmbeds.length - wikiImages.length);
 
         // 注释
         const commentCount = (text.match(obsCommentRe) || []).length +
                              (text.match(htmlCommentRe) || []).length;
 
         // 脚注
-        const footnoteCount = s.excludeFootnotes ? 0 : (text.match(footnoteRefRe) || []).length;
+        // 一致性修正：exclude* 类开关（排除注释/脚注/代码块/嵌入）语义为「字数统计时排除」，
+        // 不应把统计项本身清零——否则与 comment_count / code_count / embed_count 行为矛盾。
+        // （唯一例外是 excludeAppendedImages，其文案明确为「追加的图片不计数」，故影响 image_count。）
+        const footnoteCount = (text.match(footnoteRefRe) || []).length;
 
         // 代码统计：按块数或行数
         const codeBlocks = text.match(codeBlockRe) || [];
@@ -1342,25 +1373,39 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
             }
         }
 
-        // 链接数（注意排除 ![[图片]] 被误统计为 WikiLink）
-        function countWikiLinks(src) {
-            const re = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
-            let count = 0, m;
-            while ((m = re.exec(src)) !== null) {
-                if (m.index === 0 || src[m.index - 1] !== "!") count++;
-            }
-            return count;
-        }
-        function isImageLink(str) { return extRe.test(str) || wxRe.test(str); }
+        // 链接数统计：
+        // 语义界定（避免开关互相干扰）：
+        //   ·「排除链接不可见部分」是【字数统计】规则（外部链接排除 URL、内部链接只保留别名），
+        //     不应影响“这篇文章里有几条链接”这个事实统计。
+        //   ·「链接数不计入图片链接」是【链接计数】规则，独立决定图片 URL 是否算作一条链接。
+        // 因此两个开关各自独立生效，不再耦合。（stripAngle 已在图片统计段定义，此处复用）
 
         let linkCount = 0;
-        linkCount += (text.match(mdLinkRe) || []).length;
-        linkCount += countWikiLinks(text);
-        if (!s.excludeLinkInvisible) {
-            // 先剥离 Markdown 链接 / WikiLink 结构再统计裸 URL，
-            // 避免 [文字](http://…) 括号里的 URL 被裸 URL 规则重复计数（一条链接被算成两条）
-            const linkFreeText = text.replace(mdLinkRe, "$1").replace(wikiLinkRe, "$1");
-            linkCount += (linkFreeText.match(bareUrlRe) || []).length;
+
+        // 1) Markdown 链接 [文字](url)
+        const mdLinkMatches = text.match(mdLinkRe) || [];
+        for (const m of mdLinkMatches) {
+            const url = stripAngle((m.match(/\(([^)]*)\)/) || ["", ""])[1]);
+            if (s.linkCountExcludeImages && isImageUrl(url)) continue;
+            linkCount++;
+        }
+
+        // 2) Wiki 链接 [[target]]（排除 ![[嵌入]]）
+        const wikiRe = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+        let wm;
+        while ((wm = wikiRe.exec(text)) !== null) {
+            if (wm.index > 0 && text[wm.index - 1] === "!") continue;
+            if (s.linkCountExcludeImages && isImageUrl(wm[1])) continue;
+            linkCount++;
+        }
+
+        // 3) 裸 URL：先完整剥离 Markdown / Wiki 链接结构，
+        //    避免链接别名本身是 URL 时被重复计数（如 [https://a.com](https://a.com) 算成两条）
+        const linkFreeText = text.replace(mdLinkRe, " ").replace(wikiLinkRe, " ");
+        const bareUrls = linkFreeText.match(bareUrlRe) || [];
+        for (const m of bareUrls) {
+            if (s.linkCountExcludeImages && isImageUrl(m)) continue;
+            linkCount++;
         }
 
         // 追加的链接（非图片）计入链接数（仅实际写入文档的显示行）
@@ -1368,27 +1413,6 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
         // 追加图片计入链接数（联动）：仅当“链接数计入图片”且“图片追加计入”时
         if (!s.linkCountExcludeImages && !s.excludeAppendedImages) {
             linkCount += appendedImageCount;
-        }
-        // 若“链接数不计入图片”开启，正文中的图片链接不应计入（防御性处理）
-        if (s.linkCountExcludeImages) {
-            let subtracted = 0;
-            const mdMatches = text.match(mdLinkRe) || [];
-            for (const m of mdMatches) {
-                const url = stripAngle((m.match(/\(([^)]+)\)/) || ["", ""])[1] || "");
-                if (isImageLink(url)) subtracted++;
-            }
-            const wikiRe = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
-            let wm;
-            while ((wm = wikiRe.exec(text)) !== null) {
-                if (wm.index > 0 && text[wm.index - 1] === "!") continue;
-                if (isImageLink(wm[1])) subtracted++;
-            }
-            const bareMatches = text.match(bareUrlRe) || [];
-            for (const m of bareMatches) {
-                if (isImageLink(m)) subtracted++;
-            }
-            linkCount -= subtracted;
-            if (linkCount < 0) linkCount = 0;
         }
 
         // 字数统计：在副本上操作
@@ -2210,10 +2234,22 @@ class ArticleInfoSettingTab extends PluginSettingTab {
         const self = this;
         const s = this.plugin.settings;
         const L = (key) => tr(s.language, key);
-        const row = s.rowConfigs[rowIndex];
+        // 防御：行或槽位数据异常时自动补齐，避免设置页因单点脏数据整体空白
+        if (!Array.isArray(s.rowConfigs)) s.rowConfigs = [];
+        let row = s.rowConfigs[rowIndex];
+        if (!row || typeof row !== "object") {
+            row = s.rowConfigs[rowIndex] = { slots: [], alignment: "justify", indent: 0 };
+        }
+        if (!Array.isArray(row.slots)) row.slots = [];
 
         for (let i = 0; i < 5; i++) {
-            const slot = row.slots[i];
+            let slot = row.slots[i];
+            if (!slot || typeof slot !== "object") {
+                slot = row.slots[i] = { tag: "none", bodyShow: "hide", propPolicy: "none" };
+            }
+            if (slot.tag == null) slot.tag = "none";
+            if (slot.bodyShow == null) slot.bodyShow = "hide";
+            if (slot.propPolicy == null) slot.propPolicy = "none";
             const slotEl = container.createDiv({ cls: "aii-slot" + (sortMode ? " aii-sortable-slot" : "") });
             if (sortMode) {
                 const handle = slotEl.createEl("span", { cls: "aii-drag-handle aii-slot-handle", text: "⋮⋮", attr: { draggable: "true" } });
@@ -2568,34 +2604,20 @@ class ArticleInfoSettingTab extends PluginSettingTab {
         const s = plugin.settings;
         const L = (key) => tr(s.language, key);
 
-        // 预览区示例文本：同时含标点与空格/换行，便于直观看到两个开关各自的效果
-        const previewSample = "Hello, world! 这是一段示例文本。\n\n包含 空格 与 标点。";
-        const pCjk = (previewSample.match(/[\u4e00-\u9fa5]/g) || []).length;
-        const pCjkPunct = (previewSample.match(/[\u3000-\u303F\uFF01-\uFF60\u2014\u2026]/g) || []).length;
-        const pWords = (previewSample.match(/[a-zA-Z0-9]+/g) || []).length;
-        const previewWordCount = pCjk + (s.countPunctuation ? pCjkPunct : 0) + pWords;
-        let pCharBase = previewSample;
-        if (!s.countPunctuation) pCharBase = pCharBase.replace(PUNCT_RE, "");
-        const previewCharCount = s.charCountMethod === "include_whitespace"
-            ? pCharBase.length
-            : pCharBase.replace(/\s/g, "").length;
-        const stats = {
-            wordCount: previewWordCount,
-            characterCount: previewCharCount,
-            readingTime: 1234 / s.readingSpeed,
-            pageCount: 1234 / s.pageSize,
-            imageCount: 3,
-            localImageCount: 2,
-            networkImageCount: 1,
-            embedCount: 1,
-            commentCount: 0,
-            footnoteCount: 0,
-            codeCount: 5,
-            linkCount: 4,
-            createdDate: new Date(),
-            modifiedDate: new Date()
-        };
+        // 预览区示例文本：包含中英文、本地/网络图片、Markdown 链接与 Wiki 链接。
+        // 预览统计直接调用 calculateStats，确保预览数值与正文运行逻辑一致。
+        const previewSample = `Hello, world! 这是一段用于预览的示例文本，包含 空格 与 标点。
 
+我们可以在这里测试字数统计效果。这段文字里有中英文混合 content，以及几个链接和图片。
+
+![](https://mmbiz.qpic.cn/example/640?tp=webp)
+
+![](<./assets/example.png>)
+
+访问 [示例网站](https://example.com) 获取更多信息，也可以查看 [[内部链接示例]]。`;
+        const previewStat = { ctime: Date.now(), mtime: Date.now() };
+
+        // 先构造预览用 insertedMap，再调用 calculateStats（顺序不可颠倒）
         const previewInsertedMap = {};
         for (let i = 1; i <= 4; i++) {
             const tag = "link_image_" + i;
@@ -2607,6 +2629,8 @@ class ArticleInfoSettingTab extends PluginSettingTab {
                 label: d.linkName || ""
             };
         }
+
+        const stats = plugin.calculateStats(previewSample, previewStat, previewInsertedMap);
         const markers = plugin.buildMarkers(stats, previewInsertedMap);
         const yaml = plugin.updateYaml("", stats);
 
