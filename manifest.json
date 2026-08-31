@@ -1,7 +1,7 @@
 {
   "id": "article-info-inserter",
   "name": "Article Info Inserter",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "minAppVersion": "1.0.0",
   "description": "文章信息追加器：以标签位方式组合正文与 Frontmatter 属性，支持字数、时间、链接等统计与自定义显示.\nCombine body tags & frontmatter properties with custom stats and labels.",
   "author": "gbt777",

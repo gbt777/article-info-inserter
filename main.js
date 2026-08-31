@@ -537,7 +537,7 @@ function makeDefaultSettings() {
     const codeCountMethod = "line";
     const defaultConfig = getDefaultLangConfig(lang, codeCountMethod);
     return {
-        version: "2.0.2",
+        version: "2.0.3",
         language: lang,
 
         prependRows: 1,
@@ -2611,6 +2611,19 @@ class ArticleInfoSettingTab extends PluginSettingTab {
             const s = plugin.settings;
             const L = (key) => tr(s.language, key);
 
+            // 先构造预览用 insertedMap（与执行时一致），供去重与计数共用
+            const previewInsertedMap = {};
+            for (let i = 1; i <= 4; i++) {
+                const tag = "link_image_" + i;
+                const d = s.display[tag];
+                if (!d || !d.url) continue;
+                previewInsertedMap[tag] = {
+                    url: d.url,
+                    isImage: d.forceImage || isImageUrl(d.url),
+                    label: d.linkName || ""
+                };
+            }
+
             let previewSample;
             let previewStat = { ctime: Date.now(), mtime: Date.now() };
 
@@ -2625,6 +2638,9 @@ class ArticleInfoSettingTab extends PluginSettingTab {
                     const fm = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
                     let body = fm ? content.slice(fm[0].length) : content;
                     body = body.replace(/<div[^>]*data-aii=["']marker["'][^>]*>[\s\S]*?<\/div>/g, "");
+                    // 与“执行文章信息插入”保持一致：对正文中与 link_image_* 重复的网络图/链接做去重，
+                    // 否则预览图片数会比实际写入结果多算（已配置为追加项的网络图在正文里又出现一次）。
+                    body = await plugin.removeOldMarker(body, activeFile, previewInsertedMap);
                     previewSample = body;
                     const stat = activeFile.stat || {};
                     previewStat = { ctime: stat.ctime || Date.now(), mtime: stat.mtime || Date.now() };
@@ -2644,19 +2660,6 @@ class ArticleInfoSettingTab extends PluginSettingTab {
 ![](<./assets/example.png>)
 
 访问 [示例网站](https://example.com) 获取更多信息，也可以查看 [[内部链接示例]]。`;
-            }
-
-            // 先构造预览用 insertedMap，再调用 calculateStats（顺序不可颠倒）
-            const previewInsertedMap = {};
-            for (let i = 1; i <= 4; i++) {
-                const tag = "link_image_" + i;
-                const d = s.display[tag];
-                if (!d || !d.url) continue;
-                previewInsertedMap[tag] = {
-                    url: d.url,
-                    isImage: d.forceImage || isImageUrl(d.url),
-                    label: d.linkName || ""
-                };
             }
 
             const stats = plugin.calculateStats(previewSample, previewStat, previewInsertedMap);
