@@ -20,6 +20,10 @@
 - 重构链接统计：Markdown 链接、Wiki 链接、裸 URL 分别统计，
   并统一剥离链接结构后再统计裸 URL，避免 `[https://a.com](https://a.com)` 这类
   别名本身是 URL 的链接被重复计成两条。
+- **修复「链接数不计入图片链接」开关对 `![](url)` / `![](<url>)` 无效**：
+  裸 URL 正则会连同 Markdown 图片语法末尾的 `)` / `>` 一起捕获，导致 `isImageUrl`
+  识别失败，开关永远关不掉这些图片链接。现先在 `linkFreeText` 中剥离 Markdown
+  图片结构，释放干净 URL 后再判断。
 - **两个开关现在各自独立生效**：
   - 「链接数不计入图片链接」——决定图片 URL 是否算作一条链接；
   - 「排除链接不可见部分」——按其文案定位为**字数统计**规则
@@ -42,8 +46,10 @@
 
 ## 修复：设置页预览与实际不一致
 
-- 设置页顶部的效果预览此前使用硬编码的示例数值（图片 3 / 链接 4），与实际运行逻辑无关。
-  现改为对预览示例文本调用**真实的统计函数**，预览数值随设置实时变化，与实际写入结果一致。
+- 设置页顶部的效果预览此前使用硬编码的示例文本，预览数值固定（如图片 2 / 链接 2），
+  与当前笔记的实际运行结果无关。
+- 现改为**优先读取当前活动笔记的真实正文**（去掉 frontmatter 与本插件旧标记）作为预览文本；
+  没有活动笔记时才回退到内置示例。开关 toggles 后，预览会实时反映当前笔记的统计结果。
 
 ## 其他
 
@@ -70,10 +76,12 @@ settings loading so incomplete row/slot data can no longer blank out the whole p
 
 ### Fixed: link counting
 Markdown links, wiki links and bare URLs are now counted separately after stripping link
-syntax, so a link whose label is itself a URL is no longer double-counted. The
-"exclude image links from link count" and "exclude non-visible link parts" toggles are now
-independent: the former controls whether image URLs count as links, the latter is a
-word-count rule only.
+syntax, so a link whose label is itself a URL is no longer double-counted. Fixed the
+"exclude image links from link count" toggle being ignored for `![](url)` and `![](<url>)`
+image URLs: the bare-URL regex was capturing the trailing `)` / `>` from Markdown image
+syntax, so `isImageUrl` failed and the image URLs were always counted as links. The toggle
+and the "exclude non-visible link parts" toggle are now independent: the former controls
+whether image URLs count as links, the latter is a word-count rule only.
 
 ### Fixed: image counting
 Network image detection now also recognises `?tp=webp`-style parameters and WeChat image
@@ -86,8 +94,10 @@ extension.
 (the only exception remains "exclude appended images", whose label states it explicitly).
 
 ### Fixed: preview vs. actual result
-The settings preview used hard-coded sample numbers. It now calls the real statistics
-function, so preview values reflect your current settings and match the actual output.
+The settings preview used a hard-coded sample text, so its numbers were fixed and unrelated
+to the current note. It now prefers the body of the active note (minus frontmatter and old
+markers) as the preview text, falling back to the built-in sample only when no note is
+active. Toggling options updates the preview to reflect the current note's actual stats.
 
 ### Upgrading
 Overwrite to install. If you are coming from 1.0, delete the old `*[ ]*` markers manually

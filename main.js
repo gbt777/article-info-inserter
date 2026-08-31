@@ -1399,9 +1399,15 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
             linkCount++;
         }
 
-        // 3) 裸 URL：先完整剥离 Markdown / Wiki 链接结构，
-        //    避免链接别名本身是 URL 时被重复计数（如 [https://a.com](https://a.com) 算成两条）
-        const linkFreeText = text.replace(mdLinkRe, " ").replace(wikiLinkRe, " ");
+        // 3) 裸 URL：先完整剥离 Markdown / Wiki 链接结构以及 Markdown 图片结构，
+        //    避免链接别名本身是 URL 时被重复计数（如 [https://a.com](https://a.com) 算成两条）。
+        //    同时把图片 URL 从 ![...](<url>) / ![...](url) 中释放出来并去掉 <>/() 定界符，
+        //    否则末尾带 >/) 的 URL 会让 isImageUrl 识别失败，导致「链接数不计入图片链接」开关失效。
+        const linkFreeText = text
+            .replace(mdLinkRe, " ")
+            .replace(wikiLinkRe, " ")
+            .replace(/!\[[^\]]*\]\(<([^)]+)>\)/g, " $1 ")
+            .replace(/!\[[^\]]*\]\(([^)]+)\)/g, " $1 ");
         const bareUrls = linkFreeText.match(bareUrlRe) || [];
         for (const m of bareUrls) {
             if (s.linkCountExcludeImages && isImageUrl(m)) continue;
@@ -2599,14 +2605,37 @@ class ArticleInfoSettingTab extends PluginSettingTab {
         });
     }
 
-    refreshPreview() {
-        const plugin = this.plugin;
-        const s = plugin.settings;
-        const L = (key) => tr(s.language, key);
+    async refreshPreview() {
+        try {
+            const plugin = this.plugin;
+            const s = plugin.settings;
+            const L = (key) => tr(s.language, key);
 
-        // 预览区示例文本：包含中英文、本地/网络图片、Markdown 链接与 Wiki 链接。
-        // 预览统计直接调用 calculateStats，确保预览数值与正文运行逻辑一致。
-        const previewSample = `Hello, world! 这是一段用于预览的示例文本，包含 空格 与 标点。
+            let previewSample;
+            let previewStat = { ctime: Date.now(), mtime: Date.now() };
+
+            // 优先用当前活动笔记的真实正文做预览，让“效果预览”与执行结果一致；
+            // 没有活动文件或读取失败时回退到内置示例文本。
+            const activeFile = plugin.app && plugin.app.workspace && plugin.app.workspace.getActiveFile
+                ? plugin.app.workspace.getActiveFile()
+                : null;
+            if (activeFile && activeFile.extension === "md") {
+                try {
+                    const content = await plugin.app.vault.read(activeFile);
+                    const fm = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+                    let body = fm ? content.slice(fm[0].length) : content;
+                    body = body.replace(/<div[^>]*data-aii=["']marker["'][^>]*>[\s\S]*?<\/div>/g, "");
+                    previewSample = body;
+                    const stat = activeFile.stat || {};
+                    previewStat = { ctime: stat.ctime || Date.now(), mtime: stat.mtime || Date.now() };
+                } catch (e) {
+                    previewSample = null;
+                }
+            }
+
+            if (!previewSample) {
+                // 预览区示例文本：包含中英文、本地/网络图片、Markdown 链接与 Wiki 链接。
+                previewSample = `Hello, world! 这是一段用于预览的示例文本，包含 空格 与 标点。
 
 我们可以在这里测试字数统计效果。这段文字里有中英文混合 content，以及几个链接和图片。
 
@@ -2615,60 +2644,63 @@ class ArticleInfoSettingTab extends PluginSettingTab {
 ![](<./assets/example.png>)
 
 访问 [示例网站](https://example.com) 获取更多信息，也可以查看 [[内部链接示例]]。`;
-        const previewStat = { ctime: Date.now(), mtime: Date.now() };
-
-        // 先构造预览用 insertedMap，再调用 calculateStats（顺序不可颠倒）
-        const previewInsertedMap = {};
-        for (let i = 1; i <= 4; i++) {
-            const tag = "link_image_" + i;
-            const d = s.display[tag];
-            if (!d || !d.url) continue;
-            previewInsertedMap[tag] = {
-                url: d.url,
-                isImage: d.forceImage || isImageUrl(d.url),
-                label: d.linkName || ""
-            };
-        }
-
-        const stats = plugin.calculateStats(previewSample, previewStat, previewInsertedMap);
-        const markers = plugin.buildMarkers(stats, previewInsertedMap);
-        const yaml = plugin.updateYaml("", stats);
-
-        const renderBox = (box, rows) => {
-            if (!box) return;
-            box.innerHTML = "";
-            if (!rows || rows.length === 0) {
-                box.textContent = L("noneText");
-                return;
             }
-            for (const row of rows) {
-                const div = box.createDiv({ cls: "aii-preview-row" });
-                div.style.textAlign = row.alignment === "justify" ? "justify" : row.alignment;
-                div.style.paddingLeft = (Number(row.indent) || 0) > 0 ? `${Number(row.indent)}em` : "";
 
-                if (row.isRawMarkdown) {
-                    // 基础模式：直接显示原生 Markdown 图片/链接的渲染效果
-                    const img = row.html.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
-                    const link = row.html.match(/^\[([^\]]*)\]\(([^)]+)\)$/);
-                    if (img) {
-                        const imgEl = div.createEl("img", { attr: { src: img[2], alt: img[1] } });
-                        imgEl.style.maxWidth = "100%";
-                    } else if (link) {
-                        div.createEl("a", { text: link[1] || link[2], attr: { href: link[2] } });
-                    } else {
-                        div.textContent = row.html;
-                    }
-                    continue;
+            // 先构造预览用 insertedMap，再调用 calculateStats（顺序不可颠倒）
+            const previewInsertedMap = {};
+            for (let i = 1; i <= 4; i++) {
+                const tag = "link_image_" + i;
+                const d = s.display[tag];
+                if (!d || !d.url) continue;
+                previewInsertedMap[tag] = {
+                    url: d.url,
+                    isImage: d.forceImage || isImageUrl(d.url),
+                    label: d.linkName || ""
+                };
+            }
+
+            const stats = plugin.calculateStats(previewSample, previewStat, previewInsertedMap);
+            const markers = plugin.buildMarkers(stats, previewInsertedMap);
+            const yaml = plugin.updateYaml("", stats);
+
+            const renderBox = (box, rows) => {
+                if (!box) return;
+                box.innerHTML = "";
+                if (!rows || rows.length === 0) {
+                    box.textContent = L("noneText");
+                    return;
                 }
+                for (const row of rows) {
+                    const div = box.createDiv({ cls: "aii-preview-row" });
+                    div.style.textAlign = row.alignment === "justify" ? "justify" : row.alignment;
+                    div.style.paddingLeft = (Number(row.indent) || 0) > 0 ? `${Number(row.indent)}em` : "";
 
-                const m = row.html.match(/^<div[^>]*data-aii=["']marker["'][^>]*>([\s\S]*)<\/div>$/);
-                const content = m ? m[1] : row.html;
-                div.innerHTML = content;
-            }
-        };
+                    if (row.isRawMarkdown) {
+                        // 基础模式：直接显示原生 Markdown 图片/链接的渲染效果
+                        const img = row.html.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+                        const link = row.html.match(/^\[([^\]]*)\]\(([^)]+)\)$/);
+                        if (img) {
+                            const imgEl = div.createEl("img", { attr: { src: img[2], alt: img[1] } });
+                            imgEl.style.maxWidth = "100%";
+                        } else if (link) {
+                            div.createEl("a", { text: link[1] || link[2], attr: { href: link[2] } });
+                        } else {
+                            div.textContent = row.html;
+                        }
+                        continue;
+                    }
 
-        if (this.yamlBox) this.yamlBox.textContent = yaml || L("noneText");
-        renderBox(this.startBox, markers.startRows);
-        renderBox(this.endBox, markers.endRows);
+                    const m = row.html.match(/^<div[^>]*data-aii=["']marker["'][^>]*>([\s\S]*)<\/div>$/);
+                    const content = m ? m[1] : row.html;
+                    div.innerHTML = content;
+                }
+            };
+
+            if (this.yamlBox) this.yamlBox.textContent = yaml || L("noneText");
+            renderBox(this.startBox, markers.startRows);
+            renderBox(this.endBox, markers.endRows);
+        } catch (e) {
+            console.error("[article-info-inserter] refreshPreview error:", e);
+        }
     }
 }
