@@ -537,7 +537,7 @@ function makeDefaultSettings() {
     const codeCountMethod = "line";
     const defaultConfig = getDefaultLangConfig(lang, codeCountMethod);
     return {
-        version: "2.0.0",
+        version: "2.0.2",
         language: lang,
 
         prependRows: 1,
