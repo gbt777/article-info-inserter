@@ -1278,10 +1278,12 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
         const extRe = new RegExp("\\.(" + ext + ")([?#]|$)", "i");
         const wxRe = /wx_fmt=/i;
         function isNetworkPath(p) { return /^https?:\/\//i.test(p); }
+        // 剥掉 Markdown 图片 URL 的尖括号包裹（![...](<url>)），否则 extRe 会因末尾多出的 ">" 误判为非图片
+        const stripAngle = (u) => { const mm = u.match(/^<(.+)>$/); return mm ? mm[1] : (u || ""); };
 
         let localImageCount = 0, networkImageCount = 0;
         const mdImages = mdImagesRaw.filter(m => {
-            const url = (m.match(/\(([^)]+)\)/) || ["", ""])[1];
+            const url = stripAngle((m.match(/\(([^)]+)\)/) || ["", ""])[1] || "");
             const isImg = extRe.test(url) || wxRe.test(url);
             if (isImg) {
                 if (isNetworkPath(url)) networkImageCount++;
@@ -1304,7 +1306,7 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
                 if (!displayed.has(tag)) continue;
                 if (info.isImage) {
                     appendedImageCount++;
-                    if (isNetworkPath(info.url)) appendedImageNetwork++;
+                    if (isNetworkPath(stripAngle(info.url))) appendedImageNetwork++;
                     else appendedImageLocal++;
                 } else {
                     appendedLinkCount++;
@@ -1372,7 +1374,7 @@ module.exports = class ArticleInfoInserterPlugin extends Plugin {
             let subtracted = 0;
             const mdMatches = text.match(mdLinkRe) || [];
             for (const m of mdMatches) {
-                const url = (m.match(/\(([^)]+)\)/) || ["", ""])[1];
+                const url = stripAngle((m.match(/\(([^)]+)\)/) || ["", ""])[1] || "");
                 if (isImageLink(url)) subtracted++;
             }
             const wikiRe = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;

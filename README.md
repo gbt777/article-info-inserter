@@ -4,7 +4,34 @@
 
 **简要描述（Brief）：** 在 Obsidian 笔记正文自动追加"文章信息行"——字数、阅读时间、图片数、创建/修改时间、自定义链接与图片等，支持 Frontmatter 属性组合与灵活排版。
 
-**English summary:** Article Info Inserter is an Obsidian community plugin that automatically appends configurable article-info lines (word count, reading time, images, timestamps, custom links/images, etc.) to your Markdown notes. It supports Frontmatter properties, flexible alignment, and one-click refresh while replacing only its own `data-aii="marker"` block to avoid polluting your content.
+---
+
+## English Overview
+
+**Article Info Inserter** is an Obsidian community plugin that automatically appends configurable article-info lines to your Markdown notes. It helps you keep consistent metadata — word count, reading time, image count (local/network), created/modified time, custom links/images, and more — without manually maintaining footers.
+
+### What it does
+
+- Counts **words, characters, reading time, pages, images (local & network), embeds, footnotes, code lines, and links**;
+- Reads specified **Frontmatter properties** (title, category, tags, etc.) and displays them alongside body stats;
+- Inserts one or more info lines at the **beginning or end** of the note via configurable slots;
+- Supports **custom labels, alignment, indentation, colors, links, and images**;
+- Provides **one-click refresh** — the plugin auto-detects and replaces its own `data-aii="marker"` block, so your body content is never duplicated or corrupted.
+
+### Installation
+
+1. Install from the **Obsidian Community Plugins** store (once approved), or download `main.js` and `manifest.json` from [GitHub Releases](https://github.com/gbt777/article-info-inserter/releases);
+2. Place the files in your vault's `.obsidian/plugins/article-info-inserter/` folder;
+3. Enable the plugin under **Community Plugins** and restart Obsidian if needed.
+
+### Basic usage
+
+1. Open any Markdown note;
+2. Run **"Update article info"** from the command palette (Ctrl/Cmd+P);
+3. The plugin inserts/updates the info lines at your configured positions;
+4. Adjust settings (metrics, alignment, slots, links/images) and re-run the command to refresh.
+
+> **Desktop only**: The plugin relies on Node `crypto` and `fs` for image MD5 deduplication and local file handling, so it is marked `isDesktopOnly: true` and does not support mobile Obsidian.
 
 ---
 
