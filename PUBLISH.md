@@ -44,6 +44,15 @@ GitHub artifact attestations (build provenance) so users can verify origin.
 > attestations for release assets") is resolved by this workflow. No manual
 > `gh release create` should be used, or it would produce an unattested release.
 
+## 让市场搜索命中中文全名（文章信息追加器）
+
+**根因**：Obsidian 插件市场的搜索与展示文本来自远端 `community-plugins.json` 的 `description` 字段，而非本地 `manifest.json`。因此本地改 `manifest.json` 不会让已发布市场的搜索命中（vault 3.0.0 的 `manifest.json` 早已带 `文章信息追加器：` 前缀，但市场搜索仍搜不到，正是此因）。
+
+**发布动作（每次向社区目录提交 / 更新版本时执行）**：
+- 确保远端 `community-plugins.json` 中 `article-info-inserter` 条目的 `description` 以 `文章信息追加器：` 开头。
+- 社区目录会自动从仓库 `main` HEAD 的 `manifest.json` 读取 `description`（见上文 Submit 流程）。**发布前先确认 repo `manifest.json` 的 `description` 字段以 `文章信息追加器：` 开头，且不要回退**。当前 `manifest.json` 已是该格式，保留此前缀即可。
+- 若目录展示未同步，可在 community.obsidian.md 重新触发更新，或确认新 `manifest.json` 已合入 `main` HEAD。
+
 ## Pre-submit checklist
 
 - [ ] Repo is Public; `id` matches the repo name; `version` is `x.y.z`.
@@ -51,4 +60,5 @@ GitHub artifact attestations (build provenance) so users can verify origin.
 - [ ] Release tag = `manifest.json` version.
 - [ ] Release assets contain only `manifest.json` + `main.js`.
 - [ ] `main` HEAD `manifest.json` is the latest.
+- [ ] `manifest.json` 的 `description` 以 `文章信息追加器：` 开头（保证市场搜索中文名命中；详见上节）。
 - [ ] Submitted on community.obsidian.md and in review.

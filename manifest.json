@@ -1,9 +1,9 @@
 {
   "id": "article-info-inserter",
   "name": "Article Info Inserter",
-  "version": "2.0.3",
+  "version": "3.0.0",
   "minAppVersion": "1.0.0",
-  "description": "文章信息追加器：以标签位方式组合正文与 Frontmatter 属性，支持字数、时间、链接等统计与自定义显示.\nCombine body tags & frontmatter properties with custom stats and labels.",
+  "description": "文章信息追加器：按你的设置，在属性区、开头三行、末尾三行一键插入自动统计信息或自定义内容，更新时自动重算；含文字/图片/特殊块统计、编辑标记、作者、自定义图文与“文章结构思维导图”。\nArticle Info Inserter: insert auto-counted stats or custom content into frontmatter, head or tail lines; one click re-counts all. Mind map included.",
   "author": "gbt777",
   "authorUrl": "https://github.com/gbt777",
   "isDesktopOnly": true
